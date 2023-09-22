@@ -1,0 +1,67 @@
+/* / Not Found Page / */
+#notfound {
+  position: relative;
+  height: 50vh;
+}
+#notfound .notfound {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+.notfound {
+  max-width: 520px;
+  width: 100%;
+  line-height: 1.4;
+  text-align: center;
+}
+.notfound .notfound-404 {
+  position: relative;
+  height: 200px;
+  margin: 0px auto 20px;
+  z-index: -1;
+}
+.notfound .notfound-404 h1 {
+  font-size: 236px;
+  font-weight: 200;
+  margin: 0px;
+  color: #00bbf9;
+  text-transform: uppercase;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+.notfound .notfound-404 h2 {
+  font-size: 28px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: #00bbf9;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 5px;
+  margin: auto;
+  display: inline-block;
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  right: 0;
+}
+.notfound a {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+  text-transform: uppercase;
+  padding: 8px 23px;
+  background: rgb(226, 4, 89);
+  font-size: 18px;
+  -webkit-transition: 0.2s all;
+  transition: 0.2s all;
+}
+.notfound a:hover {
+  color: #fff;
+  background: #00bbf9;
+}
