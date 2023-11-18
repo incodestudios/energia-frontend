@@ -1,10 +1,15 @@
 import React from 'react'
+import Hero from './Hero'
+import Footer from '../../components/footer/Footer'
 
 function Home() {
   return (
-    <div className="mt-20">
-      <h1 className="text-center">HOME</h1>
-    </div>
+    <>
+      <Hero />
+      <div className="w-full h-screen"></div>
+
+      <Footer />
+    </>
   )
 }
 

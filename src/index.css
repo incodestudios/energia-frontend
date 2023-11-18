@@ -9,3 +9,78 @@ body {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.react-datepicker-wrapper {
+  width: 100% !important;
+}
+
+.custom_image_remove_icon {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  background: rgb(242, 67, 67);
+  border-radius: 50%;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  color: white;
+}
+
+/* ActionButtonNotClicked */
+.ActionButtonNotClicked {
+  text-transform: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  border-radius: 10px;
+  z-index: 5;
+}
+
+/* Animation keyframes */
+@keyframes glowing {
+  0% {
+    box-shadow: 0 0 0 0 #191c21;
+  }
+  15% {
+    box-shadow: 0 0 0 0px #fff;
+  }
+  50% {
+    box-shadow: 0 0 0 0px #191c21;
+  }
+  100% {
+    box-shadow: 0 0 0 0 #ffffff;
+  }
+}
+
+@keyframes border {
+  0%,
+  100% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 300%;
+  }
+}
+
+/* ActionButton */
+.ActionButton {
+  text-transform: none;
+  border-radius: 5px;
+  animation: glowing 6s infinite, border 12s linear infinite;
+  background: linear-gradient(
+    339.6deg,
+    #5ac8fa 22.61%,
+    #114e8a 49.45%,
+    #5ac8fa 76.68%
+  );
+  background-size: 300%;
+}
+
+@media screen and (min-width: 767px) and (max-width: 793px) {
+  .navbar-web li a {
+    font-size: 14px;
+  }
+}

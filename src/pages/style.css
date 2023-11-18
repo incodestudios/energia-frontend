@@ -6,7 +6,7 @@
 }
 
 a:hover {
-  color: rgb(76, 39, 179);
+  color: #1890ff;
 }
 
 .auth_error_success {
@@ -26,7 +26,7 @@ a:hover {
 }
 
 .auth_link {
-  color: #06b6d4;
+  color: #1890ff;
   cursor: pointer;
 }
 .auth_link:hover {
@@ -47,8 +47,8 @@ a:hover {
   font-size: 20px !important;
   height: 47px !important;
   border-radius: 50px;
-  background-color: #38d39f !important;
-  border-color: #38d39f !important;
+  background-color: #1890ff !important;
+  border-color: #1890ff !important;
   width: 100%;
   color: #fff !important;
 }
@@ -59,8 +59,8 @@ a:hover {
 
 .otp_gen_btn {
   font-size: 14px !important;
-  background-color: #38d39f !important;
-  border-color: #38d39f !important;
+  background-color: #1890ff !important;
+  border-color: #1890ff !important;
 }
 
 .upload_img_btn {
@@ -107,7 +107,7 @@ a:hover {
 /*  */
 
 .bg_page {
-  background-color: 'rgb(76, 39, 179)';
+  background-color: #1890ff;
 }
 
 .formInput {
@@ -161,7 +161,7 @@ input:invalid[focused='true'] ~ span {
   font-size: 236px;
   font-weight: 200;
   margin: 0px;
-  color: #00bbf9;
+  color: #1890ff;
   text-transform: uppercase;
   position: absolute;
   left: 50%;
@@ -174,7 +174,7 @@ input:invalid[focused='true'] ~ span {
   font-size: 28px;
   font-weight: 400;
   text-transform: uppercase;
-  color: #00bbf9;
+  color: #1890ff;
   background: rgba(255, 255, 255, 0.9);
   padding: 10px 5px;
   margin: auto;
@@ -197,7 +197,7 @@ input:invalid[focused='true'] ~ span {
 }
 .notfound a:hover {
   color: #fff;
-  background: #00bbf9;
+  background: #1890ff;
 }
 
 .react-autosuggest__suggestions-list {

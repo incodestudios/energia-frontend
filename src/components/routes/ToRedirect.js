@@ -11,16 +11,18 @@ const ToRedirect = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCount((currentCount) => --currentCount)
+      setCount((currentCount) => (currentCount > 0 ? currentCount - 1 : 0))
     }, 1000)
-    // redirect once count is equal to 0
-    if (count === 0) {
-      user?.role === 'admin'
-        ? navigate('/admin/dashboard')
-        : navigate('/dashboard')
+
+    return () => {
+      clearInterval(interval)
     }
-    // cleanup
-    return () => clearInterval(interval)
+  }, [navigate])
+
+  useEffect(() => {
+    if (count === 0) {
+      navigate('/')
+    }
   }, [count, navigate])
 
   return (

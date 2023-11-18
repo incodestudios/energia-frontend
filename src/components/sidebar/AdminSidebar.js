@@ -3,11 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { LogoutOutlined } from '@ant-design/icons'
 
 import { AiOutlineDashboard } from 'react-icons/ai'
-import {
-  MdOutlineCancel,
-  MdPriceCheck,
-  MdSettingsSuggest,
-} from 'react-icons/md'
+import { MdOutlineCancel, MdSettingsSuggest } from 'react-icons/md'
 import { PiUsersFourFill } from 'react-icons/pi'
 import Cookies from 'js-cookie'
 import { useDispatch, useSelector } from 'react-redux'
@@ -16,7 +12,7 @@ import { BiCalendar } from 'react-icons/bi'
 import { googleLogout } from '@react-oauth/google'
 import { BsListCheck } from 'react-icons/bs'
 
-const UserSidebar = () => {
+const AdminSidebar = () => {
   const { activeMenu, setActiveMenu, screenSize } = useStateContext()
   const user = useSelector((state) => state.user)
   const dispatch = useDispatch()
@@ -26,48 +22,18 @@ const UserSidebar = () => {
   const links = [
     {
       id: 1,
-      path: '/dashboard',
-      name: 'Dashboard',
-      icon: <AiOutlineDashboard />,
-    },
-    {
-      id: 2,
       path: '/admin/dashboard',
       name: 'Dashboard',
       icon: <AiOutlineDashboard />,
     },
     {
-      id: 3,
+      id: 2,
       path: '/admin/categories',
       name: 'Categories',
       icon: <BsListCheck />,
     },
     {
-      id: 4,
-      path: '/clients',
-      name: 'Clients',
-      icon: <PiUsersFourFill />,
-    },
-    {
-      id: 5,
-      path: '/schedule',
-      name: 'Schedule',
-      icon: <BiCalendar />,
-    },
-    {
-      id: 6,
-      path: '/schedule-client',
-      name: 'Schedule',
-      icon: <BiCalendar />,
-    },
-    {
-      id: 7,
-      path: '/admin/price-list',
-      name: 'Price list',
-      icon: <MdPriceCheck />,
-    },
-    {
-      id: 8,
+      id: 3,
       path: '/settings',
       name: 'Settings',
       icon: <MdSettingsSuggest />,
@@ -119,19 +85,6 @@ const UserSidebar = () => {
           </div>
           <div className="mt-5">
             {links.map((link) => {
-              if (
-                (link.path === '/clients' && user.role !== 'trainer') ||
-                (link.path === '/schedule' && user.role !== 'trainer') ||
-                (link.path === '/schedule-client' && user.role !== 'member') ||
-                (link.path === '/dashboard' &&
-                  user.role !== 'member' &&
-                  user.role !== 'trainer') ||
-                (link.path === '/admin/dashboard' && user.role !== 'admin') ||
-                (link.path === '/admin/categories' && user.role !== 'admin') ||
-                (link.path === '/admin/price-list' && user.role !== 'admin')
-              ) {
-                return false
-              }
               return (
                 <NavLink
                   to={`${link.path}`}
@@ -167,4 +120,4 @@ const UserSidebar = () => {
   )
 }
 
-export default UserSidebar
+export default AdminSidebar

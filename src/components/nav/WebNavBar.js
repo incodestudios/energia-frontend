@@ -3,8 +3,8 @@ import { useSelector } from 'react-redux'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import Cookies from 'js-cookie'
-import Button from './Button'
 import { AiOutlineClose, AiOutlineMenu } from 'react-icons/ai'
+import { googleLogout } from '@react-oauth/google'
 
 const WebNavBar = () => {
   let Links = [
@@ -18,9 +18,25 @@ const WebNavBar = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [openDrop, setOpenDrop] = useState(false)
-  const [openMobDrop, setOpenMobDrop] = useState(false)
   const divRef = useRef()
   const user = useSelector((state) => state.user)
+
+  const [scroll, setScroll] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setScroll(true)
+      } else {
+        setScroll(false)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -45,18 +61,34 @@ const WebNavBar = () => {
     navigate('/login')
   }
 
+  const logoutGoogle = () => {
+    googleLogout()
+    Cookies.remove('user')
+    dispatch({
+      type: 'LOGOUT',
+      payload: null,
+    })
+    navigate('/login')
+  }
+
   const activeLink =
-    'block py-2 pl-2 pr-4 text-gray-900 rounded bg-gray-200 md:bg-transparent hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 duration-500'
+    'block py-2 pl-2 pr-4 text-white text-base rounded md:bg-transparent md:hover:bg-transparent md:hover:text-sky-500 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 duration-500'
 
   const normalLink =
-    'block py-2 pl-2 pr-4 text-gray-900 rounded bg-gray-200 md:bg-transparent hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 duration-500'
+    'block py-2 pl-2 pr-4 text-white text-base rounded md:bg-transparent hover:bg-sky-500 md:hover:bg-transparent md:hover:text-sky-500 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 duration-500'
 
   return (
-    <div className="shadow-sm">
+    <div
+      className={
+        scroll
+          ? 'flex items-center justify-center fixed top-0 left-0 w-full h-16 z-50 transition-all duration-500 bg-slate-800'
+          : 'flex justify-between items-center h-20 mx-auto px-4 text-white relative z-50 transition-all duration-300 bg-gray-900 w-full'
+      }
+    >
       <nav className="container mx-auto">
         <div className="flex flex-wrap items-center justify-between mx-auto p-2">
           <Link to="/" as={NavLink} className="flex items-center">
-            <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
+            <span className="self-center text-2xl font-semibold whitespace-nowrap text-white">
               Energis
             </span>
           </Link>
@@ -67,7 +99,7 @@ const WebNavBar = () => {
                 <Link
                   to="/login"
                   as={NavLink}
-                  className="inline-flex items-center justify-center  rounded-lg text-md px-3 py-1.5 focus:outline-none mx-6"
+                  className="inline-flex items-center justify-center  rounded-lg text-md px-3 py-1.5 focus:outline-none mx-6 text-white"
                 >
                   Login
                 </Link>
@@ -75,7 +107,7 @@ const WebNavBar = () => {
                 <Link
                   to="/register"
                   as={NavLink}
-                  className="inline-flex items-center justify-center text-white bg-blue-600 hover:bg-blue-900 rounded-lg text-md px-3 py-1.5 focus:outline-none mr-2"
+                  className="inline-flex items-center justify-center text-white bg-sky-500 hover:bg-sky-400 text-md px-3 py-1.5 focus:outline-none mr-2"
                 >
                   Register
                 </Link>
@@ -112,7 +144,13 @@ const WebNavBar = () => {
                 <ul className="py-2" aria-labelledby="user-menu-button">
                   <button
                     onClick={() => {
-                      navigate('/dashboard')
+                      navigate(
+                        `${
+                          user && user.role === 'admin'
+                            ? '/admin/dashboard'
+                            : '/dashboard'
+                        }`
+                      )
                       setOpenDrop(false)
                     }}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
@@ -124,7 +162,7 @@ const WebNavBar = () => {
                     <button
                       onClick={() => {
                         setOpenDrop(false)
-                        logout()
+                        user?.google ? logoutGoogle() : logout()
                       }}
                       type="button"
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
@@ -153,12 +191,17 @@ const WebNavBar = () => {
           </div>
 
           <ul
-            className={`md:flex md:items-center md:pb-0 pb-12 md:static bg-white md:z-auto left-0 w-full md:w-auto transition-all duration-500 ease-in ${
-              open ? 'pl-0 visible pb-0' : 'pl-9 hidden'
+            className={`md:flex md:items-center md:pb-0 pb-12 md:static md:z-auto left-0  md:w-auto navbar-web   ${
+              open
+                ? 'fixed left-0 top-0 w-[60%] h-full bg-gray-900 ease-in-out duration-500'
+                : 'ease-in-out duration-500 fixed left-[-100%]'
             }`}
           >
             {Links.map((link, i) => (
-              <li key={i} className="md:ml-8 sm:ml-0 text-sm md:my-0 my-2">
+              <li
+                key={i}
+                className="md:ml-8 sm:ml-0 text-base md:my-0 my-2 flex-shrink-0"
+              >
                 <NavLink
                   to={`${link.path}`}
                   key={link.id}
@@ -166,7 +209,7 @@ const WebNavBar = () => {
                     isActive ? `${activeLink}` : `${normalLink}`
                   }
                   style={({ isActive }) => ({
-                    color: isActive ? 'rgb(3, 201, 215)' : '',
+                    color: isActive ? '#0FBCF9' : '',
                   })}
                 >
                   <span className="capitalize ">{link.name}</span>

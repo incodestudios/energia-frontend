@@ -97,3 +97,87 @@ export const forgetPasswordUpdateRequest = async (newdata, setError) => {
     setError(errorMsg)
   }
 }
+
+export const updateUserData = async (data, authtoken, setError) => {
+  try {
+    const res = await axios.put(
+      `${process.env.REACT_APP_BACKEND_URL}user/userinfo`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${authtoken}`,
+        },
+      }
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const updateUserPassword = async (data, authtoken, setError) => {
+  try {
+    const res = await axios.put(
+      `${process.env.REACT_APP_BACKEND_URL}user/update-password`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${authtoken}`,
+        },
+      }
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const googleLoginUser = async (newdata, setError) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}google-login`,
+      newdata
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const getTrainerAndSchedule = async (username, setError) => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}trainer/${username}`
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const updateTrainerCat = async (data, authtoken, setError) => {
+  try {
+    const res = await axios.put(
+      `${process.env.REACT_APP_BACKEND_URL}user/trainer-update-categories`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${authtoken}`,
+        },
+      }
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}

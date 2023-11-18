@@ -2,19 +2,17 @@ import { useSelector } from 'react-redux'
 import { NavLink } from 'react-router-dom'
 import { BsPlayBtn } from 'react-icons/bs'
 import { LinkOutlined } from '@ant-design/icons'
-import { useStateContext } from '../../../components/contexts/ContextProvider'
-import UserSidebar from '../../../components/sidebar/UserSidebar'
 import Navbar from '../../../components/nav/Navbar'
 import HeaderProfile from '../../../components/HeaderProfile'
 import WebNavBar from '../../../components/nav/WebNavBar'
 import Footer from '../../../components/footer/Footer'
-import { useEffect, useState } from 'react'
-import { getCategories } from '../../../components/functions/categories'
+import AdminSidebar from '../../../components/sidebar/AdminSidebar'
+import { useStateContext } from '../../../components/contexts/ContextProvider'
+import UserSidebar from '../../../components/sidebar/UserSidebar'
 
-const Dashboard = () => {
+const AdminDashboard = () => {
   const user = useSelector((state) => state.user)
   const { activeMenu } = useStateContext()
-
   return (
     <>
       <WebNavBar />
@@ -84,4 +82,4 @@ const Dashboard = () => {
   )
 }
 
-export default Dashboard
+export default AdminDashboard
