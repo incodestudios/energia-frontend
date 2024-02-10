@@ -42,6 +42,7 @@ const WebNavBar = () => {
     const handleClickOutside = (event) => {
       if (divRef.current && !divRef.current.contains(event.target)) {
         setOpenDrop(false)
+        setOpen(false)
       }
     }
 
@@ -58,6 +59,7 @@ const WebNavBar = () => {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigate('/login')
   }
 
@@ -68,6 +70,7 @@ const WebNavBar = () => {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigate('/login')
   }
 

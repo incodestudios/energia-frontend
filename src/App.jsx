@@ -32,6 +32,9 @@ import Cookies from 'js-cookie'
 import { googleLogout } from '@react-oauth/google'
 import { updateTrainerCat } from './components/functions/user'
 import AdminPriceList from './pages/Admin/PriceList/AdminPriceList'
+import ScheduleDetails from './pages/Schedule/ScheduleDetails'
+import Checkout from './pages/Booking/Checkout'
+import NextPayment from './pages/User/Trainer/NextPayment'
 
 function App() {
   const user = useSelector((state) => state.user)
@@ -82,6 +85,7 @@ function App() {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigate('/login')
   }
 
@@ -92,6 +96,7 @@ function App() {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigate('/login')
   }
 
@@ -238,6 +243,12 @@ function App() {
           <Route exact path="/" element={<Home />} />
           <Route exact path="/trainer/:username" element={<PublicProfile />} />
 
+          <Route
+            exact
+            path="/trainer/:username/:id/:date"
+            element={<ScheduleDetails />}
+          />
+
           <Route element={<NotLoggedInRoute />}>
             <Route exact path="/register" element={<Register />} />
             <Route exact path="/login" element={<Login />} />
@@ -251,12 +262,18 @@ function App() {
             <Route exact path="/dashboard" element={<Dashboard />} />
             <Route exact path="/settings" element={<Settings />} />
             <Route exact path="/schedule-client" element={<ClientSchedule />} />
+            <Route exact path="/checkout" element={<Checkout />} />
           </Route>
 
           <Route element={<TrainerRoute />}>
             <Route exact path="/clients" element={<Clients />} />
             <Route exact path="/clients/add-client" element={<AddClient />} />
             <Route exact path="/schedule" element={<Schedule />} />
+            <Route
+              exact
+              path="/dashboard/next-payment-trainer"
+              element={<NextPayment />}
+            />
           </Route>
 
           <Route element={<AdminRoute />}>

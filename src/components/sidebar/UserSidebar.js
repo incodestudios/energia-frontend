@@ -80,6 +80,7 @@ const UserSidebar = () => {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigation('/login')
   }
 
@@ -90,6 +91,7 @@ const UserSidebar = () => {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigation('/login')
   }
 
