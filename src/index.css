@@ -79,6 +79,19 @@ body {
   background-size: 300%;
 }
 
+.custom-calendar .react-datepicker__day--selected {
+  background-color: #3490dc;
+  color: #fff;
+}
+.custom-calendar .react-datepicker__day--selected:hover {
+  background-color: #3490dc;
+  color: #fff;
+}
+.custom-calendar .react-datepicker__header {
+  background-color: #fff !important;
+  color: #fff;
+}
+
 @media screen and (min-width: 767px) and (max-width: 793px) {
   .navbar-web li a {
     font-size: 14px;

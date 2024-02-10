@@ -1,49 +1,30 @@
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, NavLink } from 'react-router-dom'
-import { BsEnvelope, BsPlayBtn } from 'react-icons/bs'
-import Cookies from 'js-cookie'
-import {
-  CheckCircleFilled,
-  ExclamationCircleOutlined,
-  LinkOutlined,
-} from '@ant-design/icons'
+
+import { CheckCircleFilled, ExclamationCircleOutlined } from '@ant-design/icons'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { useStateContext } from '../../../components/contexts/ContextProvider'
 import UserSidebar from '../../../components/sidebar/UserSidebar'
 import Navbar from '../../../components/nav/Navbar'
-import HeaderProfile from '../../../components/HeaderProfile'
-import { useEffect, useState } from 'react'
+
+import { useEffect, useRef, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
-import { AiOutlineUser } from 'react-icons/ai'
-import { BiUserCheck } from 'react-icons/bi'
-import { RiLockPasswordLine } from 'react-icons/ri'
-import {
-  updateUserData,
-  updateUserPassword,
-} from '../../../components/functions/user'
+
 import { Lottie } from '@crello/react-lottie'
 import animationData from '../../../assets/loader.json'
-import { toast } from 'react-toastify'
+
 import WebNavBar from '../../../components/nav/WebNavBar'
 import Footer from '../../../components/footer/Footer'
-import { BarLoader } from 'react-spinners'
+
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
 import format from 'date-fns/format'
 import parse from 'date-fns/parse'
 import startOfWeek from 'date-fns/startOfWeek'
 import getDay from 'date-fns/getDay'
-import { isSameDay } from 'date-fns'
-import enUS from 'date-fns/locale/en-US'
+
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import moment from 'moment'
-import {
-  deleteSchedule,
-  getScheduleClientsFront,
-  getScheduleTrainer,
-  sendScheduleData,
-  updateSchedule,
-} from '../../../components/functions/client'
+import { getScheduleClientsFront } from '../../../components/functions/client'
 const cancelIcon = require('../../../assets/cancel-icon.png')
 
 const locales = {
@@ -59,6 +40,7 @@ const localizer = dateFnsLocalizer({
 })
 
 const ClientSchedule = () => {
+  const divRef = useRef()
   const {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
@@ -80,14 +62,14 @@ const ClientSchedule = () => {
   const [successModal, setSuccessModal] = useState('')
   const [errorModal, setErrorModal] = useState('')
   const [loadingModal, setLoadingModal] = useState(false)
+  const [timeSlots, setTimeSlots] = useState([
+    { start: new Date(), end: new Date() },
+  ])
 
   const { activeMenu } = useStateContext()
-  const [openTab, setOpenTab] = useState(1)
-  const [showModal, setShowModal] = useState(false)
+
   const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedSlot, setSelectedSlot] = useState(null)
-  const [scheduleTitle, setScheduleTitle] = useState('')
-  const [dbError, setDbError] = useState(false)
+
   const [schedules, setSchedules] = useState([])
   const [selectedScheduleEdit, setSelectedScheduleEdit] = useState(null)
 
@@ -97,12 +79,24 @@ const ClientSchedule = () => {
       const res = await getScheduleClientsFront(user?.token, setError)
       if (res.status === 200) {
         const modifiedData = res?.data?.clientData.map((item) => {
-          return {
+          const processedItem = {
             ...item,
             start: new Date(item.start),
             end: new Date(item.end),
           }
+
+          if (item.timeSlots && Array.isArray(item.timeSlots)) {
+            processedItem.timeSlots = item.timeSlots.map((slot) => ({
+              start: new Date(slot.start),
+              end: new Date(slot.end),
+            }))
+          } else {
+            processedItem.timeSlots = []
+          }
+
+          return processedItem
         })
+
         setSchedules(modifiedData)
       }
       setLoading(false)
@@ -116,7 +110,7 @@ const ClientSchedule = () => {
   }, [])
 
   const scheduleSelect = (event) => {
-    const shFound = schedules?.find((sh) => sh._id === event._id)
+    const shFound = schedules?.find((sh) => sh._id === event.id)
     setSelectedScheduleEdit(shFound)
     setShowEditModal(true)
   }
@@ -133,18 +127,76 @@ const ClientSchedule = () => {
     if (selectedScheduleEdit) {
       setValue('title', selectedScheduleEdit.title)
       setValue('describe', selectedScheduleEdit.description)
-
-      const { start, end } = selectedScheduleEdit
-
-      const formattedStart = moment(start).toDate()
-      const formattedEnd = moment(end).toDate()
-
       setValue('isVirtual', selectedScheduleEdit?.isVirtual)
       setValue('virtualMeetingLink', selectedScheduleEdit?.virtualMeetingLink)
-      setValue('start', formattedStart)
-      setValue('end', formattedEnd)
+      setValue('location', selectedScheduleEdit.location)
+
+      const timeSlots = selectedScheduleEdit?.timeSlots || []
+
+      const formattedTimeSlots = timeSlots.map((slot) => ({
+        start: new Date(slot.start),
+        end: new Date(slot.end),
+      }))
+
+      setTimeSlots(formattedTimeSlots)
     }
-  }, [selectedScheduleEdit, setValue])
+  }, [selectedScheduleEdit, setValue, setTimeSlots])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeEditModal()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (divRef.current && !divRef.current.contains(event.target)) {
+        closeEditModal()
+      }
+    }
+
+    window.addEventListener('mouseup', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('mouseup', handleClickOutside)
+    }
+  }, [])
+
+  const allEvents =
+    schedules &&
+    schedules.reduce((events, item) => {
+      events.push({
+        id: item._id,
+        title: `${item.title} - ${moment(item.start).format('LT')} to ${moment(
+          item.end
+        ).format('LT')}`,
+        start: new Date(item.start),
+        end: new Date(item.end),
+        type: 'schedule',
+      })
+
+      item.timeSlots.forEach((slot, index) => {
+        const slotTitle = `${item.title} - Slot ${index + 1} - ${moment(
+          slot.start
+        ).format('LT')} to ${moment(slot.end).format('LT')}`
+        events.push({
+          id: item._id,
+          title: slotTitle,
+          start: new Date(slot.start),
+          end: new Date(slot.end),
+          type: 'slot',
+          slotId: slot._id,
+        })
+      })
+
+      return events
+    }, [])
 
   return (
     <>
@@ -221,7 +273,10 @@ const ClientSchedule = () => {
               <div className="-mx-4 sm:-mx-8 sm:px-8 py-4 overflow-x-auto">
                 {showEditModal && (
                   <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-gray-800 bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2">
+                    <div
+                      ref={divRef}
+                      className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2"
+                    >
                       <div className="bg-gray-100 border-b px-4 py-6 flex justify-between items-center rounded-lg">
                         <h3 className="font-semibold text-xl text-stone-600">
                           Schedule details
@@ -262,59 +317,34 @@ const ClientSchedule = () => {
                               </p>
                             )}
                           </div>
-                          <div className="mb-4 z-10">
-                            <label
-                              htmlFor="start"
-                              className="block text-sm font-medium text-gray-700 my-2"
-                            >
-                              Selected start date
-                            </label>
-                            <Controller
-                              control={controlEdit}
-                              name="start"
-                              className="w-full"
-                              render={({ field }) => (
-                                <DatePicker
-                                  placeholderText="Start start date"
-                                  onChange={(date) => field.onChange(date)}
-                                  selected={field.value}
-                                  value={field.value}
-                                  showTimeSelect
-                                  timeFormat="HH:mm"
-                                  dateFormat="MMMM d, yyyy h:mm aa"
-                                  className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
-                                  id="start"
-                                  disabled
-                                />
-                              )}
-                            />
-                          </div>
-                          <div className="mb-4 z-10">
-                            <label
-                              htmlFor="end"
-                              className="block text-sm font-medium text-gray-700 my-2"
-                            >
-                              Selected end date
-                            </label>
-                            <Controller
-                              control={controlEdit}
-                              name="end"
-                              render={({ field }) => (
-                                <DatePicker
-                                  placeholderText="Select end date"
-                                  onChange={(date) => field.onChange(date)}
-                                  selected={field.value}
-                                  value={field.value}
-                                  timeFormat="HH:mm"
-                                  dateFormat="MMMM d, yyyy h:mm aa"
-                                  showTimeSelect
-                                  className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
-                                  id="end"
-                                  disabled
-                                />
-                              )}
-                            />
-                          </div>
+
+                          {timeSlots.map((slot, index) => (
+                            <div key={index} className="mb-4">
+                              <label
+                                htmlFor={`startEdit${index}`}
+                                className="block text-sm font-medium text-gray-700 my-2"
+                              >
+                                Start date for Slot {index + 1}
+                              </label>
+                              <div className="flex items-center">
+                                <span className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200 outline-none">
+                                  {new Date(slot.start).toLocaleString()}
+                                </span>
+                              </div>
+
+                              <label
+                                htmlFor={`endEdit${index}`}
+                                className="block text-sm font-medium text-gray-700 my-2"
+                              >
+                                End date for Slot {index + 1}
+                              </label>
+                              <div className="flex items-center">
+                                <span className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200 outline-none">
+                                  {new Date(slot.end).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
 
                           {virtual && (
                             <div className="mb-4">
@@ -334,6 +364,25 @@ const ClientSchedule = () => {
                               </a>
                             </div>
                           )}
+
+                          <div className="mb-4">
+                            <label
+                              htmlFor="location"
+                              className="block text-sm font-medium text-gray-700 my-2"
+                            >
+                              Location
+                            </label>
+                            <input
+                              id="location"
+                              type="text"
+                              {...registerEdit('location', {
+                                required: 'Location is required',
+                              })}
+                              disabled
+                              className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
+                              placeholder="Location"
+                            />
+                          </div>
 
                           <div className="mb-4">
                             <label
@@ -369,7 +418,7 @@ const ClientSchedule = () => {
 
                 <Calendar
                   localizer={localizer}
-                  events={schedules}
+                  events={allEvents}
                   startAccessor="start"
                   endAccessor="end"
                   defaultView="month"

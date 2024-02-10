@@ -15,6 +15,20 @@ export const registerUser = async (newdata, setError) => {
   }
 }
 
+export const registerUserFrontBook = async (newdata, setError) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}register-booking-client`,
+      newdata
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
 export const registerComplete = async (newdata, setError) => {
   try {
     const res = await axios.post(
@@ -150,10 +164,41 @@ export const googleLoginUser = async (newdata, setError) => {
   }
 }
 
+export const googleLoginUserBooking = async (newdata, setError) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}google-login-booking`,
+      newdata
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
 export const getTrainerAndSchedule = async (username, setError) => {
   try {
     const res = await axios.get(
       `${process.env.REACT_APP_BACKEND_URL}trainer/${username}`
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const getTrainerAndScheduleByIdFrontend = async (
+  username,
+  id,
+  setError
+) => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}trainer/${username}/${id}`
     )
     setError(null)
     return res
@@ -168,6 +213,47 @@ export const updateTrainerCat = async (data, authtoken, setError) => {
     const res = await axios.put(
       `${process.env.REACT_APP_BACKEND_URL}user/trainer-update-categories`,
       data,
+      {
+        headers: {
+          Authorization: `Bearer ${authtoken}`,
+        },
+      }
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const getClientsNextPaymentDateFront = async (token, setError) => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}next-payment-date`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    setError(null)
+    return res
+  } catch (error) {
+    const errorMsg = catchErrors(error)
+    setError(errorMsg)
+  }
+}
+
+export const sendPaymentReminderFront = async (
+  newdata,
+  authtoken,
+  setError
+) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}send-payment-reminder`,
+      newdata,
       {
         headers: {
           Authorization: `Bearer ${authtoken}`,

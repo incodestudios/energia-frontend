@@ -13,7 +13,7 @@ import { useStateContext } from '../../../components/contexts/ContextProvider'
 import UserSidebar from '../../../components/sidebar/UserSidebar'
 import Navbar from '../../../components/nav/Navbar'
 import HeaderProfile from '../../../components/HeaderProfile'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { AiOutlineUser } from 'react-icons/ai'
 import { BiUserCheck } from 'react-icons/bi'
@@ -60,6 +60,7 @@ const localizer = dateFnsLocalizer({
 })
 
 const Schedule = () => {
+  const divRef = useRef()
   const {
     register,
     handleSubmit,
@@ -102,11 +103,13 @@ const Schedule = () => {
   const [selectedCategory, setSelectedCategory] = useState([])
   const [selectedCat, setSelectedCat] = useState({})
   const [categories, setCategories] = useState([])
+  const [timeSlots, setTimeSlots] = useState([
+    { start: new Date(), end: new Date() },
+  ])
 
   const virtual = watch('isVirtual')
   const virtualEdit = watchEditModal('isVirtual')
   const virtualLnk = watchEditModal('virtualMeetingLink')
-
   const getSchedule = async () => {
     try {
       setLoading(true)
@@ -132,6 +135,38 @@ const Schedule = () => {
     getSchedule()
   }, [])
 
+  const allEvents =
+    schedules &&
+    schedules.reduce((events, item) => {
+      // Add schedule event
+      events.push({
+        id: item._id,
+        title: `${item.title} - ${moment(item.start).format('LT')} to ${moment(
+          item.end
+        ).format('LT')}`,
+        start: new Date(item.start),
+        end: new Date(item.end),
+        type: 'schedule',
+      })
+
+      // Add slot events
+      item.timeSlots.forEach((slot, index) => {
+        const slotTitle = `${item.title} - Slot ${index + 1} - ${moment(
+          slot.start
+        ).format('LT')} to ${moment(slot.end).format('LT')}`
+        events.push({
+          id: item._id,
+          title: slotTitle,
+          start: new Date(slot.start),
+          end: new Date(slot.end),
+          type: 'slot',
+          slotId: slot._id,
+        })
+      })
+
+      return events
+    }, [])
+
   const getData = async () => {
     try {
       setLoading(true)
@@ -155,9 +190,9 @@ const Schedule = () => {
   }))
 
   const scheduleSelect = (event) => {
-    const shFound = schedules?.find((sh) => sh._id === event._id)
+    console.log(event)
+    const shFound = schedules?.find((sh) => sh._id === event.id)
     setSelectedScheduleEdit(shFound)
-
     const catFound = categories?.find(
       (cat) => cat?._id === (shFound?.category?._id || shFound?.category)
     )
@@ -173,6 +208,7 @@ const Schedule = () => {
 
     setSelectedPricing(pricingFound)
     setPricingValues(pricingFound)
+
     setShowEditModal(true)
   }
 
@@ -192,11 +228,41 @@ const Schedule = () => {
     setPricingValues([])
     setSelectedCat({})
     setShowEditModal(false)
+    setTimeSlots([{ start: new Date(), end: new Date() }])
     resetEdit()
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeEditModal()
+        closeModal()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (divRef.current && !divRef.current.contains(event.target)) {
+        closeEditModal()
+        closeModal()
+      }
+    }
+
+    window.addEventListener('mouseup', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('mouseup', handleClickOutside)
+    }
+  }, [])
+
   const handleSelectSlot = (slotInfo) => {
     setSelectedSlot(slotInfo)
+    console.log(slotInfo)
     setShowModal(true)
   }
 
@@ -215,29 +281,130 @@ const Schedule = () => {
       setValue('isVirtual', selectedScheduleEdit?.isVirtual.toString())
       setValue('virtualMeetingLink', selectedScheduleEdit?.virtualMeetingLink)
       setValue('location', selectedScheduleEdit?.location)
+
+      const timeSlots = selectedScheduleEdit?.timeSlots || []
+
+      const formattedTimeSlots = timeSlots.map((slot) => ({
+        start: new Date(slot.start),
+        end: new Date(slot.end),
+      }))
+
+      setTimeSlots(formattedTimeSlots)
     }
-  }, [selectedScheduleEdit, setValue])
+  }, [selectedScheduleEdit, setValue, setTimeSlots])
+
+  const handleSlotChange = (date, index, type) => {
+    const updatedTimeSlots = [...timeSlots]
+    updatedTimeSlots[index] = {
+      ...updatedTimeSlots[index],
+      [type]: date,
+    }
+    setTimeSlots(updatedTimeSlots)
+  }
+
+  const handleRemoveSlot = (indexToRemove) => {
+    if (timeSlots.length > 1) {
+      setTimeSlots((prevSlots) =>
+        prevSlots.filter((_, index) => index !== indexToRemove)
+      )
+    }
+  }
+
+  const isEndTimeAfterStartTime = (start, end) => {
+    const startTime = new Date(start)
+    const endTime = new Date(end)
+
+    if (endTime <= startTime) {
+      return false
+    }
+
+    if (
+      startTime.getDate() !== endTime.getDate() ||
+      startTime.getMonth() !== endTime.getMonth()
+    ) {
+      if (
+        endTime.getHours() < startTime.getHours() ||
+        (endTime.getHours() === startTime.getHours() &&
+          endTime.getMinutes() < startTime.getMinutes())
+      ) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  function validateTimeSlots(timeSlots) {
+    const addDays = (date, days) => {
+      const result = new Date(date)
+      result.setDate(result.getDate() + days)
+      return result
+    }
+
+    const isOverlapping = (slot1, slot2) => {
+      const start1 = new Date(slot1.start)
+      const end1 = new Date(slot1.end)
+      const start2 = new Date(slot2.start)
+      const end2 = new Date(slot2.end)
+
+      for (let d = new Date(start1); d <= end1; d = addDays(d, 1)) {
+        if (d >= start2 && d <= end2) {
+          if (
+            (start1.getHours() < end2.getHours() ||
+              (start1.getHours() === end2.getHours() &&
+                start1.getMinutes() < end2.getMinutes())) &&
+            (end1.getHours() > start2.getHours() ||
+              (end1.getHours() === start2.getHours() &&
+                end1.getMinutes() > start2.getMinutes()))
+          ) {
+            return true
+          }
+        }
+      }
+      return false
+    }
+
+    for (let i = 0; i < timeSlots.length; i++) {
+      for (let j = i + 1; j < timeSlots.length; j++) {
+        if (isOverlapping(timeSlots[i], timeSlots[j])) {
+          return false
+        }
+      }
+    }
+    return true
+  }
 
   const onSubmit = async (formData) => {
-    const currentDate = new Date()
-    const selectedStartDate = new Date(selectedSlot?.slots[0])
-
     if (virtual === 'Yes' && !formData?.virtualMeetingLink) {
       return toast.error('Schedule virtual meeting link is required!')
+    }
+
+    for (const slot of timeSlots) {
+      if (!isEndTimeAfterStartTime(slot.start, slot.end)) {
+        setErrorModal('Invalid time slot: End time must be after start time.')
+        return
+      }
     }
 
     setErrorModal('')
     setSuccessModal('')
 
+    setErrorModal(null)
+    setSuccessModal(null)
+
+    if (!validateTimeSlots(timeSlots)) {
+      setErrorModal('Time slots overlap. Please adjust the schedule.')
+      return
+    }
+
     try {
       setLoadingModal(true)
-      if (formData.start && formData.end) {
+
+      if (timeSlots.length > 0) {
         const newSchedule = {
           trainer: user?.id,
           title: formData.title,
-          allDay: selectedSlot.slots.length === 1,
-          start: formData.start,
-          end: formData.end,
+          timeSlots: timeSlots,
           isVirtual: virtual === 'Yes' ? true : false,
           virtualMeetingLink: formData?.virtualMeetingLink,
           description: formData?.describe ? formData?.describe : '',
@@ -252,7 +419,7 @@ const Schedule = () => {
           setErrorModal
         )
 
-        if (res.status === 200) {
+        if (res && res.status === 200) {
           setSuccessModal('Schedule added successfully')
           setTimeout(() => {
             setSuccessModal('')
@@ -262,30 +429,44 @@ const Schedule = () => {
             closeModal()
           }, 2000)
         }
-
-        setLoadingModal(false)
       } else {
-        setErrorModal('Please select both start and end dates')
+        setErrorModal('Please add at least one time slot')
       }
     } catch (error) {
+      console.error('Error during form submission:', error)
+    } finally {
       setLoadingModal(false)
     }
   }
 
   const onSubmitEdit = async (formData) => {
+    console.log('Time Slots:', timeSlots)
     const isAllDay = isSameDay(new Date(formData.start), new Date(formData.end))
+
+    for (const slot of timeSlots) {
+      if (!isEndTimeAfterStartTime(slot.start, slot.end)) {
+        setErrorModal('Invalid time slot: End time must be after start time.')
+        return
+      }
+    }
+
+    if (!validateTimeSlots(timeSlots)) {
+      setErrorModal('Time slots overlap. Please adjust the schedule.')
+      return
+    }
+
     try {
       setErrorModal('')
       setSuccessModal('')
       setLoadingModal(true)
+
       const newSchedule = {
+        trainer: selectedScheduleEdit?.trainer,
         title: formData.title,
-        allDay: isAllDay,
-        start: formData.start,
-        end: formData.end,
+        timeSlots: timeSlots,
+        description: formData?.describe ? formData?.describe : '',
         isVirtual: virtualEdit === 'true' ? true : false,
         virtualMeetingLink: virtualEdit === 'true' ? virtualLnk : null,
-        description: formData?.describe ? formData?.describe : '',
         location: formData.location,
         pricing: pricingValues,
         category: selectedCat?._id,
@@ -298,7 +479,7 @@ const Schedule = () => {
         setErrorModal
       )
 
-      if (res.status === 200) {
+      if (res && res.status === 200) {
         setSuccessModal(res.data.message)
         setTimeout(() => {
           setSuccessModal('')
@@ -422,7 +603,10 @@ const Schedule = () => {
               <div className="-mx-4 sm:-mx-8 sm:px-8 py-4 overflow-x-auto">
                 {showModal && (
                   <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-gray-800 bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2 overflow-y-auto max-h-[100vh]">
+                    <div
+                      ref={divRef}
+                      className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2 overflow-y-auto max-h-[100vh]"
+                    >
                       <div className="bg-gray-100 border-b px-4 py-6 flex justify-between items-center rounded-lg">
                         <h3 className="font-semibold text-xl text-stone-600">
                           Add schedule
@@ -508,57 +692,76 @@ const Schedule = () => {
                             )}
                           </div>
 
-                          <div className="mb-4 z-10">
-                            <label
-                              htmlFor="start"
-                              className="block text-sm font-medium text-gray-700 my-2"
-                            >
-                              Select start date
-                            </label>
-                            <Controller
-                              control={control}
-                              name="start"
-                              className="w-full"
-                              render={({ field }) => (
+                          {timeSlots.map((slot, index) => (
+                            <div key={index} className="mb-4">
+                              <label
+                                htmlFor={`start${index}`}
+                                className="block text-sm font-medium text-gray-700 my-2"
+                              >
+                                Select start date for Slot {index + 1}
+                              </label>
+                              <div className="flex items-center">
                                 <DatePicker
-                                  placeholderText="Start start date"
-                                  onChange={(date) => field.onChange(date)}
-                                  selected={field.value}
-                                  value={field.value}
+                                  placeholderText={`Start date for Slot ${
+                                    index + 1
+                                  }`}
+                                  onChange={(date) =>
+                                    handleSlotChange(date, index, 'start')
+                                  }
+                                  selected={slot.start}
                                   showTimeSelect
                                   timeFormat="HH:mm"
                                   dateFormat="MMMM d, yyyy h:mm aa"
                                   className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
-                                  id="start"
                                 />
-                              )}
-                            />
-                          </div>
-                          <div className="mb-4 z-10">
-                            <label
-                              htmlFor="end"
-                              className="block text-sm font-medium text-gray-700 my-2"
-                            >
-                              Select end date
-                            </label>
-                            <Controller
-                              control={control}
-                              name="end"
-                              render={({ field }) => (
+                              </div>
+
+                              <label
+                                htmlFor={`end${index}`}
+                                className="block text-sm font-medium text-gray-700 my-2"
+                              >
+                                Select end date for Slot {index + 1}
+                              </label>
+                              <div className="flex items-center">
                                 <DatePicker
-                                  placeholderText="Select end date"
-                                  onChange={(date) => field.onChange(date)}
-                                  selected={field.value}
-                                  value={field.value}
+                                  placeholderText={`End date for Slot ${
+                                    index + 1
+                                  }`}
+                                  onChange={(date) =>
+                                    handleSlotChange(date, index, 'end')
+                                  }
+                                  selected={slot.end}
+                                  showTimeSelect
                                   timeFormat="HH:mm"
                                   dateFormat="MMMM d, yyyy h:mm aa"
-                                  showTimeSelect
                                   className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
-                                  id="end"
                                 />
+                              </div>
+
+                              {timeSlots.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSlot(index)}
+                                  className="text-red-500 font-bold py-2 px-4 rounded border-red-500 border mt-2"
+                                >
+                                  Remove this slot
+                                </button>
                               )}
-                            />
-                          </div>
+                            </div>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTimeSlots([
+                                ...timeSlots,
+                                { start: new Date(), end: new Date() },
+                              ])
+                            }
+                            className="text-sky-500 font-bold py-2 px-4 rounded border-sky-500 border mr-4 mb-2"
+                          >
+                            Add another time slot
+                          </button>
 
                           <div className="mb-4">
                             <label className="text-slate-600">
@@ -705,7 +908,10 @@ const Schedule = () => {
 
                 {showEditModal && (
                   <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-gray-800 bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2 overflow-y-auto max-h-[100vh]">
+                    <div
+                      ref={divRef}
+                      className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2 overflow-y-auto max-h-[100vh]"
+                    >
                       <div className="bg-gray-100 border-b px-4 py-6 flex justify-between items-center rounded-lg">
                         <h3 className="font-semibold text-xl text-stone-600">
                           Update or delete schedule
@@ -807,57 +1013,77 @@ const Schedule = () => {
                               </p>
                             )}
                           </div>
-                          <div className="mb-4 z-10">
-                            <label
-                              htmlFor="start"
-                              className="block text-sm font-medium text-gray-700 my-2"
-                            >
-                              Select start date
-                            </label>
-                            <Controller
-                              control={controlEdit}
-                              name="start"
-                              className="w-full"
-                              render={({ field }) => (
+
+                          {timeSlots.map((slot, index) => (
+                            <div key={index} className="mb-4">
+                              <label
+                                htmlFor={`startEdit${index}`}
+                                className="block text-sm font-medium text-gray-700 my-2"
+                              >
+                                Select start date for Slot {index + 1}
+                              </label>
+                              <div className="flex items-center">
                                 <DatePicker
-                                  placeholderText="Start start date"
-                                  onChange={(date) => field.onChange(date)}
-                                  selected={field.value}
-                                  value={field.value}
+                                  placeholderText={`Start date for Slot ${
+                                    index + 1
+                                  }`}
+                                  onChange={(date) =>
+                                    handleSlotChange(date, index, 'start')
+                                  }
+                                  selected={new Date(slot.start)} // Make sure slot.start is a valid date string
                                   showTimeSelect
                                   timeFormat="HH:mm"
                                   dateFormat="MMMM d, yyyy h:mm aa"
                                   className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
-                                  id="start"
                                 />
-                              )}
-                            />
-                          </div>
-                          <div className="mb-4 z-10">
-                            <label
-                              htmlFor="end"
-                              className="block text-sm font-medium text-gray-700 my-2"
-                            >
-                              Select end date
-                            </label>
-                            <Controller
-                              control={controlEdit}
-                              name="end"
-                              render={({ field }) => (
+                              </div>
+
+                              <label
+                                htmlFor={`endEdit${index}`}
+                                className="block text-sm font-medium text-gray-700 my-2"
+                              >
+                                Select end date for Slot {index + 1}
+                              </label>
+                              <div className="flex items-center">
                                 <DatePicker
-                                  placeholderText="Select end date"
-                                  onChange={(date) => field.onChange(date)}
-                                  selected={field.value}
-                                  value={field.value}
+                                  placeholderText={`End date for Slot ${
+                                    index + 1
+                                  }`}
+                                  onChange={(date) =>
+                                    handleSlotChange(date, index, 'end')
+                                  }
+                                  selected={new Date(slot.end)} // Make sure slot.end is a valid date string
+                                  showTimeSelect
                                   timeFormat="HH:mm"
                                   dateFormat="MMMM d, yyyy h:mm aa"
-                                  showTimeSelect
                                   className="block w-full py-1 px-2 text-lg rounded-sm bg-white border border-stone-200  outline-none"
-                                  id="end"
                                 />
+                              </div>
+
+                              {timeSlots.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSlot(index)}
+                                  className="text-red-500 font-bold py-2 px-4 rounded border-red-500 border mt-2"
+                                >
+                                  Remove this slot
+                                </button>
                               )}
-                            />
-                          </div>
+                            </div>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTimeSlots([
+                                ...timeSlots,
+                                { start: new Date(), end: new Date() },
+                              ])
+                            }
+                            className="text-sky-500 font-bold py-2 px-4 rounded border-sky-500 border mr-4 mb-2"
+                          >
+                            Add another time slot
+                          </button>
 
                           <div className="mb-4">
                             <label className="text-slate-600">
@@ -1014,10 +1240,9 @@ const Schedule = () => {
                     </div>
                   </div>
                 )}
-
                 <Calendar
                   localizer={localizer}
-                  events={schedules}
+                  events={allEvents}
                   startAccessor="start"
                   endAccessor="end"
                   selectable

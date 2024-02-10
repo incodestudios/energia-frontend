@@ -25,6 +25,8 @@ import 'react-tooltip/dist/react-tooltip.css'
 import Select from 'react-dropdown-select'
 
 import {
+  getClientsNextPaymentDateFront,
+  sendPaymentReminderFront,
   updateUserData,
   updateUserPassword,
 } from '../../../components/functions/user'
@@ -46,7 +48,7 @@ import Pagination from '../../../components/pagination/pagination'
 
 const cancelIcon = require('../../../assets/cancel-icon.png')
 
-const Clients = () => {
+const NextPayment = () => {
   const divRef = useRef()
   const user = useSelector((state) => state.user)
   const dispatch = useDispatch()
@@ -69,12 +71,12 @@ const Clients = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [dataPerPage] = useState(10)
 
-  const getClients = async () => {
+  const getData = async () => {
     try {
       setLoading(true)
-      const res = await getClientsTrainer(user?.token, setError)
+      const res = await getClientsNextPaymentDateFront(user?.token, setError)
       if (res.status === 200) {
-        setData(res?.data?.clientsData)
+        setData(res?.data)
       }
       setLoading(false)
     } catch (error) {
@@ -83,54 +85,14 @@ const Clients = () => {
   }
 
   useEffect(() => {
-    getClients()
+    getData()
   }, [])
 
-  const getSchedule = async () => {
-    try {
-      setLoading(true)
-      const res = await getScheduleTrainer(user?.token, setError)
-      if (res.status === 200) {
-        setSchedules(res?.data?.trainerData)
-      }
-      setLoading(false)
-    } catch (error) {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    getSchedule()
-  }, [])
-
-  const resendLink = async (name, email) => {
-    const newData = {
-      trainer: user?.id,
-      name,
-      email,
-    }
-    setError('')
-    setSuccess('')
-
-    try {
-      setLoading(true)
-      const res = await resendLinkRegFrontClient(newData, user?.token, setError)
-
-      if (res && res.status === 200) {
-        setSuccess(res.data.message)
-        setTimeout(() => {
-          setSuccess('')
-          setError('')
-          window.location.reload()
-        }, 2000)
-      }
-
-      setLoading(false)
-    } catch (err) {
-      setLoading(false)
-      setSuccess('')
-    }
-  }
+  //Get current posts
+  const indexOfLastPost = currentPage * dataPerPage
+  const indexOfFirstPost = indexOfLastPost - dataPerPage
+  const currentData = data?.slice(indexOfFirstPost, indexOfLastPost)
+  const howManyPages = Math?.ceil(data.length / dataPerPage)
 
   const searched = (keyword) => (c) => {
     const lowerCaseKeyword = keyword.toLowerCase()
@@ -140,90 +102,40 @@ const Clients = () => {
     )
   }
 
-  const clientSelect = (c) => {
-    const chFound = data?.find((cl) => cl._id === c)
-    setSelectedClientEdit(chFound)
+  const sendPaymentReminder = async (name, email, date) => {
+    const formattedDate = new Date(date).toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+    })
 
-    const clientSchedules = schedules.filter((schedule) =>
-      chFound.schedules?.includes(schedule._id)
-    )
-    setSelectedClientSchedules(clientSchedules)
-    setScheduleValues(clientSchedules)
-    setShowEditModal(true)
-  }
-
-  const closeEditModal = () => {
-    setSelectedClientEdit(null)
-    setScheduleValues(null)
-    setErrorModal('')
-    setSuccessModal('')
-    setShowEditModal(false)
-  }
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        closeEditModal()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [])
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (divRef.current && !divRef.current.contains(event.target)) {
-        closeEditModal()
-      }
-    }
-
-    window.addEventListener('mouseup', handleClickOutside)
-
-    return () => {
-      window.removeEventListener('mouseup', handleClickOutside)
-    }
-  }, [])
-
-  const updateSchedule = async (e) => {
-    e.preventDefault()
     const newData = {
-      clientId: selectedClientEdit?._id,
-      schedules: scheduleValues,
+      name,
+      email,
+      date: formattedDate,
     }
 
-    setErrorModal('')
-    setSuccessModal('')
+    setError('')
+    setSuccess('')
 
     try {
-      setLoadingModal(true)
-      const res = await updateClientSchedule(
-        newData,
-        user?.token,
-        setErrorModal
-      )
-      if (res.status === 200) {
-        setSuccessModal('Client schedule updated successfully')
+      setLoading(true)
+      const res = await sendPaymentReminderFront(newData, user?.token, setError)
+
+      if (res && res.status === 200) {
+        setSuccess(res.data.message)
         setTimeout(() => {
-          setSuccessModal('')
-          setErrorModal('')
-          getSchedule()
-          getClients()
-          closeEditModal()
+          setSuccess('')
+          setError('')
         }, 2000)
       }
-      setLoadingModal(false)
-    } catch (error) {
-      setLoadingModal(false)
+
+      setLoading(false)
+    } catch (err) {
+      setLoading(false)
+      setSuccess('')
     }
   }
-
-  //Get current posts
-  const indexOfLastPost = currentPage * dataPerPage
-  const indexOfFirstPost = indexOfLastPost - dataPerPage
-  const currentData = data?.slice(indexOfFirstPost, indexOfLastPost)
-  const howManyPages = Math?.ceil(data.length / dataPerPage)
 
   return (
     <>
@@ -250,7 +162,7 @@ const Clients = () => {
           </div>
 
           <div className="m-2 md:ml-12">
-            <h1 className="text-xl mb-4">Clients</h1>
+            <h1 className="text-xl mb-4">Next payment clients</h1>
             <Link
               to="/clients/add-client"
               as={NavLink}
@@ -302,115 +214,6 @@ const Clients = () => {
                 )}
 
                 <div className="-mx-4 sm:-mx-8 sm:px-8 py-4 overflow-x-auto">
-                  {showEditModal && (
-                    <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-gray-800 bg-opacity-50">
-                      <div
-                        ref={divRef}
-                        className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2"
-                      >
-                        <div className="bg-gray-100 border-b px-4 py-6 flex justify-between items-center rounded-lg">
-                          <h3 className="font-semibold text-xl text-stone-600">
-                            Update client schedule
-                          </h3>
-
-                          <div className="flex">
-                            <button
-                              onClick={closeEditModal}
-                              className="text-black close-modal"
-                            >
-                              <img src={cancelIcon} alt="Cancel" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="p-6">
-                          <div className="relative w-full">
-                            <div className="flex justify-center items-center h-1 absolute w-full">
-                              {loadingModal && (
-                                <Lottie
-                                  config={{
-                                    animationData: animationData,
-                                    loop: true,
-                                    autoplay: true,
-                                  }}
-                                  height={100}
-                                  width={120}
-                                />
-                              )}
-
-                              {successModal && (
-                                <h5 className="text-center text-green-500 auth_error_success mt-3 text-success d-flex justify-content-center align-items-center">
-                                  <CheckCircleFilled
-                                    style={{
-                                      fontSize: '22px',
-                                      color: '#50C878',
-                                      marginRight: '5px',
-                                      position: 'relative',
-                                      top: '-3px',
-                                    }}
-                                  />
-                                  {successModal}
-                                </h5>
-                              )}
-                              {errorModal && (
-                                <h5 className="text-center text-red-400 auth_error_success my-3 text-danger d-flex justify-content-center align-items-center">
-                                  <ExclamationCircleOutlined
-                                    style={{
-                                      fontSize: '20px',
-                                      color: '#FAA0A0',
-                                      marginRight: '5px',
-                                      position: 'relative',
-                                      top: '-3px',
-                                    }}
-                                  />{' '}
-                                  {errorModal}
-                                </h5>
-                              )}
-                            </div>
-                          </div>
-
-                          <form className="m-5" onSubmit={updateSchedule}>
-                            <div className="mb-4">
-                              <label className="text-slate-600">
-                                Schedules
-                              </label>
-                              <Select
-                                name="select"
-                                options={schedules}
-                                labelField="title"
-                                valueField="_id"
-                                multi
-                                onChange={(value) => setScheduleValues(value)}
-                                color="#5ac8fa"
-                                values={selectedClientSchedules}
-                              />
-                            </div>
-
-                            <div className="flex justify-start mt-10">
-                              <button
-                                className={`bg-sky-500 hover:bg-sky-400 text-white font-bold py-2 rounded mr-10 px-10 ${
-                                  loadingModal && 'ActionButton'
-                                }`}
-                                type="submit"
-                              >
-                                Update schedule
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={closeEditModal}
-                                className=" text-sky-500 font-bold py-2 px-10 rounded border-sky-500 border"
-                                disabled={loadingModal}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="pb-3 bg-white">
                     <div className="space-y-1 overflow-x-auto">
                       {!loading && currentData && currentData?.length === 0 && (
@@ -452,24 +255,28 @@ const Clients = () => {
                                     </td>
                                     <td className="py-3 text-gray-500 text-left pl-3">
                                       <div className="text-gray-900 whitespace-no-wrap text-center flex justify-center items-center float-right">
-                                        <span className="btn btn-sm float-right mx-2">
-                                          <button
-                                            onClick={() => clientSelect(c._id)}
-                                            className="focus:outline-none focus:shadow-outline focus:border-none"
-                                          >
-                                            <BiEdit
-                                              className="text-sky-500 focus:outline-none focus:shadow-outline focus:border-none"
-                                              data-tooltip-id={`userEditTooltip-${c._id}`}
+                                        <span className="btn btn-sm float-right mx-2"></span>
+                                        <button
+                                          onClick={() =>
+                                            sendPaymentReminder(
+                                              c?.name,
+                                              c?.email,
+                                              c?.nextPayment
+                                            )
+                                          }
+                                          className="bg-sky-500 text-white rounded-sm px-4"
+                                          disabled={loading}
+                                        >
+                                          {loading ? (
+                                            <PulseLoader
+                                              color="#fff"
+                                              loading={loading}
+                                              size={7}
                                             />
-                                          </button>
-                                          <ReactTooltip
-                                            id={`userEditTooltip-${c._id}`}
-                                            place="top"
-                                            effect="solid"
-                                          >
-                                            Edit client schedule
-                                          </ReactTooltip>
-                                        </span>
+                                          ) : (
+                                            'Send alert'
+                                          )}
+                                        </button>
                                         <span className="btn btn-sm float-right mx-2">
                                           {c?.verified ? (
                                             <ImUserCheck
@@ -492,25 +299,6 @@ const Clients = () => {
                                             ? 'Client Verified'
                                             : 'Client Not Verified'}
                                         </ReactTooltip>
-                                        {!c.verified && (
-                                          <button
-                                            onClick={() =>
-                                              resendLink(c.name, c.email)
-                                            }
-                                            className="bg-sky-500 text-white rounded-sm px-4"
-                                            disabled={loading}
-                                          >
-                                            {loading ? (
-                                              <PulseLoader
-                                                color="#fff"
-                                                loading={loading}
-                                                size={7}
-                                              />
-                                            ) : (
-                                              'Resend'
-                                            )}
-                                          </button>
-                                        )}
                                       </div>
                                     </td>
                                   </tr>
@@ -541,4 +329,4 @@ const Clients = () => {
   )
 }
 
-export default Clients
+export default NextPayment

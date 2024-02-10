@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { RiLockPasswordLine } from 'react-icons/ri'
 import { Lottie } from '@crello/react-lottie'
 import animationData from '../../assets/loader.json'
@@ -25,6 +25,9 @@ let newInputCodeIndex = 0
 
 const Login = () => {
   const inputCodeRef = useRef()
+  const location = useLocation()
+  const from = location.state?.from || '/'
+
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -107,9 +110,16 @@ const Login = () => {
           expires: 30,
         })
 
-        response?.data?.userData?.role === 'admin'
-          ? navigate('/admin/dashboard')
-          : navigate('/dashboard')
+        let nextRoute =
+          from !== '/'
+            ? from
+            : response?.data?.userData?.role === 'admin'
+            ? '/admin/dashboard'
+            : '/dashboard'
+
+        navigate(nextRoute, { replace: true })
+
+        navigate(nextRoute, { replace: true })
       }, 2000)
       setLoading(false)
     } catch (err) {

@@ -14,7 +14,7 @@ import { useStateContext } from '../../../components/contexts/ContextProvider'
 import UserSidebar from '../../../components/sidebar/UserSidebar'
 import Navbar from '../../../components/nav/Navbar'
 import HeaderProfile from '../../../components/HeaderProfile'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { AiOutlineUser } from 'react-icons/ai'
 import { BiEdit, BiUserCheck } from 'react-icons/bi'
@@ -50,6 +50,7 @@ const cancelIcon = require('../../../assets/cancel-icon.png')
 const imagePreviewIcon = require('../../../assets/image-preview.png')
 
 const AdminCategories = () => {
+  const divRef = useRef()
   const user = useSelector((state) => state.user)
 
   const {
@@ -214,6 +215,34 @@ const AdminCategories = () => {
   const currentData = data?.slice(indexOfFirstPost, indexOfLastPost)
   const howManyPages = Math?.ceil(data.length / dataPerPage)
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeEditModal()
+        closeModal()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (divRef.current && !divRef.current.contains(event.target)) {
+        closeEditModal()
+        closeModal()
+      }
+    }
+
+    window.addEventListener('mouseup', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('mouseup', handleClickOutside)
+    }
+  }, [])
+
   return (
     <>
       <WebNavBar />
@@ -242,7 +271,7 @@ const AdminCategories = () => {
             <h1 className="text-xl mb-4">Categories</h1>
             <button
               onClick={() => setShowModal(!showModal)}
-              className="border-x-1 border-y-1 hover:bg-sky-400  py-2 px-4 sm:mb-0 bg-sky-500 text-white"
+              className="border-x-1 border-y-1 hover:bg-sky-400  py-2 px-4 sm:mb-0 bg-sky-500 text-white focus:outline-none focus:shadow-outline focus:border-none"
             >
               Add Category
             </button>
@@ -292,7 +321,10 @@ const AdminCategories = () => {
                 <div className="-mx-4 sm:-mx-8 sm:px-8 py-4 overflow-x-auto">
                   {showModal && (
                     <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-gray-800 bg-opacity-50">
-                      <div className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2 overflow-y-auto max-h-[100vh]">
+                      <div
+                        ref={divRef}
+                        className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2 overflow-y-auto max-h-[100vh]"
+                      >
                         <div className="bg-gray-100 border-b px-4 py-6 flex justify-between items-center rounded-lg">
                           <h3 className="font-semibold text-xl text-stone-600">
                             Add category
@@ -301,7 +333,7 @@ const AdminCategories = () => {
                           <div className="flex">
                             <button
                               onClick={closeModal}
-                              className="text-black close-modal"
+                              className="text-black close-modal focus:outline-none focus:shadow-outline focus:border-none"
                             >
                               <img src={cancelIcon} alt="Cancel" />
                             </button>
@@ -416,7 +448,10 @@ const AdminCategories = () => {
 
                   {showEditModal && (
                     <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-gray-800 bg-opacity-50">
-                      <div className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2">
+                      <div
+                        ref={divRef}
+                        className="bg-white rounded-lg shadow-lg w-full sm:w-4/5 md:w-1/2 pb-2"
+                      >
                         <div className="bg-gray-100 border-b px-4 py-6 flex justify-between items-center rounded-lg">
                           <h3 className="font-semibold text-xl text-stone-600">
                             Update Category
@@ -584,9 +619,10 @@ const AdminCategories = () => {
                                         <span className="btn btn-sm float-right mx-2">
                                           <button
                                             onClick={() => dataSelect(c._id)}
+                                            className="focus:outline-none focus:shadow-outline focus:border-none"
                                           >
                                             <BiEdit
-                                              className="text-sky-500"
+                                              className="text-sky-500 focus:outline-none focus:shadow-outline focus:border-none"
                                               data-tooltip-id={`userEditTooltip-${c._id}`}
                                             />
                                           </button>

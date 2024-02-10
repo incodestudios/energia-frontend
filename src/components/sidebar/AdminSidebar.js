@@ -46,6 +46,7 @@ const AdminSidebar = () => {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigation('/login')
   }
 
@@ -56,6 +57,7 @@ const AdminSidebar = () => {
       type: 'LOGOUT',
       payload: null,
     })
+    localStorage.removeItem('bookingDetails')
     navigation('/login')
   }
 
